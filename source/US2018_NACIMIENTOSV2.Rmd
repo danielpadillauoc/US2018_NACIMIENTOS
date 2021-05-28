@@ -7,6 +7,10 @@ output:
     toc: yes
   pdf_document:
     toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
 ---
 
 ```{r setup, include=FALSE}
@@ -20,28 +24,39 @@ library(ggplot2)
 library(ggcorrplot)
 ```
 
-1.Descripción del dataset. ¿Por qué es importante y qué pregunta/problema pretende
-responder?
+
+```{r carga_archivo}
+filename <-("US_births(2018).csv")
+data <- read.csv(filename)
+dim(data)
+names(data)
+```
+
+## <span style="color:darkblue"> 1.Descripción del dataset. ¿Por qué es importante y qué pregunta/problema pretende responder?</span>
 
 El conjunto de datos seleccionado contiene información de todos los nacimientos registrados en Estados Unidos en el año 2018 (un total de más de 3.8 millones de registros). Se ha obtenido de la página de internet kaggle, en concreto de link siguiente: https://www.kaggle.com/des137/us-births-2018
 
 Se trata de una subselección de 55 atributos de un dataset con más de 150 atributos, que contiene los datos publicados en el CDC (Centers for Disease Control and Prevention) perteneciente a la administración pública estadounidense. 
 
-El conjunto de datos seleccionado permite hacer múltiples estudios en profundidad con respecto al peso de los bebes al nacer, pudiendo determinar las variables que más influyen cómo podrían ser los elementos fisiológicos característicos de la madre (edad, peso, altura, raza, etc).
+El año 2018 puede ser un año representativo de la década 2010-2019, por lo que este conjunto de datos consideramos representativo de los nacimientos de mujeres sanas (sin factores de riesgo) de toda la década. Nos va a permitir hacer múltiples estudios en profundidad con respecto al peso de los bebes al nacer, pudiendo determinar si las características fisiológicas de la madre (edad, peso, altura, raza, etc) tienen influencia en el peso de los bebes.
 
-Adicionalmente, se pueden estudiar otros fenómenos sociológicos como la influencia del nivel de estudios, estado civil, etc., en la edad en la que las madres americanas tienen su primer hijo, y si éstos son características homogéneas por razas.
+Adicionalmente, se pueden estudiar otros fenómenos sociológicos como la influencia del nivel de estudios, estado civil, raza, etc., en la edad en la que las madres americanas tienen su primer hijo, y si éstos son características homogéneas por razas.
 
 Por último, los resultados se podrían usar para generar un modelo predictivo que usar para, una vez ajustado por semana de embarazo, tener indicios si el feto se está desarrollando de forma adecuada.
 
 En esta práctica vamos a tratar de responder a las siguientes preguntas:
-* ¿Qué factores fisiológicos de la madre determina el peso al nacer del bebé? Dado que puede haber factores de riesgo como ciertas enfermedades infecciosas, obesidad mórbida, etc., se va a considerar una selección de registros en los que la madre no tiene riesgo reportado.
+* ¿Qué factores fisiológicos de la madre ayudan a predecir el peso al nacer del bebé? Dado que puede haber factores de riesgo como ciertas enfermedades infecciosas, obesidad mórbida, etc., se va a considerar una selección de registros en los que la madre no tiene riesgo reportado.
 * ¿Están estos factores fisiológicos de la madre igualmente presentes en todas las razas?
+* ¿Hay factores fisiológicos de la madre igualmente presentes en todas las razas?
 * ¿Tiene influencia en el peso del recién nacido el ser madre fumadora?
-* ¿Se puede afirmar que las mujeres con estudios superiores tienen su primer hijo más tarde que las que no tienen estudios universitarios?
+* ¿Hay factores sociológicos que condicionan la edad del primer nacimiento?
 
 ***
 
-Descripción de los campos (en negrita los campos que se van a objeto de limpieza y análisis en la práctica)
+
+## <span style="color:darkblue">2. Integración y selección de los datos de interés a analizar</span>
+
+**Descripción de los campos del dataset** (en negrita los campos que van a objeto de limpieza y análisis en la práctica)
 
 * 1-ATTEND: Tipo de asistente en el parto (1)Doctor en Medicina, (2)Doctor en Osteopatía, (3)Matrona, (4)Otro tipo de enfermera, (5)Other  
 
@@ -118,16 +133,7 @@ Descripción de los campos (en negrita los campos que se van a objeto de limpiez
 * 55-**WTGAIN:** Incremento de peso de la madre en libras
 
 
-
-```{r carga_archivo}
-filename <-("US_births(2018).csv")
-data <- read.csv(filename)
-dim(data)
-names(data)
-```
-
-
-Seleccionamos los atributos necesarios para el estudio.
+### Seleccionamos los atributos necesarios para el estudio.
 
 ```{r }
 data2 <- data[,c(3,4,5,8,26,30,36,38,41,46,47,48,49,54,55)]
@@ -141,7 +147,8 @@ Tipos de datos:
 sapply(data2, function(x) class(x))
 ```
 
-Filtramos por las madres que no tienen factores de riesgo en el embarazo, borrando el campo del dataset.
+
+Filtramos por las madres que no tienen factores de riesgo en el embarazo, dado que puede haber muchos otros riesgos no explicitados en el dataset, ni tampoco hay información relevante sobre losmismos.
 
 ```{r }
 data2 <- data2[data2$NO_RISKS == 1,-9]
@@ -149,9 +156,9 @@ dim(data2)
 names(data2)
 ```
 
-Uno de los análisis a realizar es la influencia del nivel de estudios de la madre en la edad del primer nacimiento. Para ello, vamos a generar una variable dicotómica obteniendo si es el primer nacimiento mediante los atributos PRIOTERM, PRIORLIVE y PRIORDEAD. 
+Uno de los análisis que queremos realizar es sobre la influencia del nivel de estudios de la madre en la edad del primer nacimiento. Para ello, vamos a generar una variable dicotómica obteniendo si es el primer nacimiento mediante los atributos PRIOTERM, PRIORLIVE y PRIORDEAD. 
 
-El primer paso es tratar los registros con missing values en alguna de las variables PRIOTERM, PRIORLIVE y PRIORDEAD.
+El primer paso es tratar los registros con valores ausentes en alguna de las variables PRIOTERM, PRIORLIVE y PRIORDEAD. En este caso, 99 es el valor centinela de dato no válido.
 
 ```{r}
 nrow(data2[data2$PRIORTERM  == 99 | data2$PRIORLIVE == 99 | data2$PRIORDEAD == 99 ,])/nrow(data2)*100
@@ -163,17 +170,14 @@ El porcentaje de valores ausentes es del 0.43% de los registros por lo que podem
 data2 <- data2[!(data2$PRIORTERM  == 99 | data2$PRIORLIVE == 99 | data2$PRIORDEAD == 99) ,]
 ```
 
-Una vez borrados, generamos el atributo PRIMER_EMBARAZO, como clave dicotómica. 0 si no es el primero, 1 si lo es.
+Una vez borrados, generamos el atributo PRIMER_EMBARAZO, como variable dicotómica. 0 si no es el primero, 1 si lo es.
+
 ```{r}
 data2$PRIMER_EMBARAZO = 0
 data2$PRIMER_EMBARAZO[data2$PRIORTERM  == 0 & data2$PRIORLIVE == 0 & data2$PRIORDEAD == 0 ] = 1
-```
-
-```{r}
 data2 <- data2[,-(9:11)]
 names(data2)
 ```
-
 
 Para facilidad de uso vamos a cambiar el nombre de las variables y reordenar los campos por afinidad.
 
@@ -188,7 +192,7 @@ names(data2)
 
 Después de estos tratamientos básicos contamos con 5 variables categóricas y 8 variables numéricas.
 
-## Tratamiento de variables categóricas.
+### Tratamiento de variables categóricas
 
 ```{r }
 numvars <- c(1:4, 8, 10, 12)
@@ -200,19 +204,39 @@ names(data2[,catvars])
 summary(data2[,catvars])
 ```
 
-Tenemos 327.987 valores ausentes en la variable ESTADO_CIVIL, estos valores los vamos a tratar como otra categoría de la variable.
+La variable de ESTADO_CIVIL tiene 327.987 valores ausentes, y no tenemos una buena forma de inferir los datos correctos. La opción, dado el gran volumen de registros que tenemos, sería descartar los valores ausentes.
+
+Como precaución previa, vamos a ver como están distribuidas en el resto de variables categóricas. 
+
+Para obtener las proporciones correctamente, lo primero que tenemos que poner es un valor a los NA, y a continuación observar las proporciones.
 
 ```{r}
 data2$ESTADO_CIVIL[is.na(data2$ESTADO_CIVIL)] = 0
+proportions(table(data2$ESTADO_CIVIL, data2$SEXO_HIJO), margin = 2)
+proportions(table(data2$ESTADO_CIVIL, data2$RAZA_MADRE), margin = 2) 
+proportions(table(data2$ESTADO_CIVIL, data2$EDUC_MADRE), margin = 2)
 ```
 
+Desde el punto de vista del sexo del bebe, el borrado no debería generar ningún riesgo de sesgo, ya que vemos que las proporciones se mantienen prácticamente iguales para los dos sexos. 
 
-Transformación de las variables categóricas a factor.
+Sin embargo, tanto respecto a la raza de la madre, como a su nivel de estudios, nos encontramos que las proporciones de los datos a borrar no son despreciables en el total de la muestra de cada categoría, con proporciones mayores a 10% en la mayoría de los casos.
+
+Llegado a este punto, y después de haber probado a imputar estos datos ausentes con métodos de imputación basados en la similitud tipo kNN, decidimos borrar estos registros con los datos ausentes. Nos parece que es más coherente que tratar el dato como una categoría adicional ("Soltera", "Casada", "Desconocido"). Esta decisión conlleva la asumpción de que no hay razones para que las personas que no aporten su estado civil estén sesgadas a estar "Casadas" o "Solteras". Es probable que en el pasado esta asumpción fuera más débil por cierto rechazo social que entendemos no está presente en nuestros días.
+
+Borramos por tanto los registros con estado civil desconocido.
 
 ```{r}
+data2 <- data2[data2$ESTADO_CIVIL != 0,]
+nrow(data2)
+```
+
+El número de registros sigue siendo considerablemente alto, más de 2.2 millones.
+
+Transformación de las variables categóricas a factor.
+```{r}
 data2$ESTADO_CIVIL <- factor(data2$ESTADO_CIVIL,
-                                levels = c(0:2),
-                                labels = c("Desconocido","Casada","Soltera"))
+                                levels = c(1:2),
+                                labels = c("Casada","Soltera"))
 
 data2$EDUC_MADRE <- factor(data2$EDUC_MADRE,
                                 levels = c(1:9),
@@ -228,11 +252,11 @@ data2$EDUC_MADRE <- factor(data2$EDUC_MADRE,
 
 data2$RAZA_MADRE <- factor(data2$RAZA_MADRE,
                                 levels = c(1:7),
-                                labels = c("Blanca",
-                                           "Negra",
-                                           "Indoamericana o nativa alaskeña",
+                                labels = c("Caucasiana",
+                                           "Afroamericana",
+                                           "Indoamericana",
                                            "Asiatica",
-                                           "Hawaiiana o de otra isla del pacifico",
+                                           "Hawaiiana",
                                            "Más de una raza",
                                            "Desconocido"))
 
@@ -241,7 +265,6 @@ data2$PRIMER_EMBARAZO <- factor(data2$PRIMER_EMBARAZO,
                                 labels = c("Si","No"))
 
 data2$SEXO_HIJO <- factor(data2$SEXO_HIJO)
-
 ```
 
 
@@ -249,18 +272,17 @@ data2$SEXO_HIJO <- factor(data2$SEXO_HIJO)
 summary(data2[,catvars])
 ```
 
-## Tratamiento de variables numéricas.
+### Tratamiento de variables numéricas.
 
 ```{r }
 names(data2[,numvars])
-```
-```{r}
 summary(data2[,numvars])
 ```
 
-Observamos la presencia de valores centinela que nos muestran la presencia de valores perdidos en todas las variables excepto EDAD_MADRE, vamos a proceder con su imputación.
+Observamos la presencia de valores centinela que nos muestran la presencia de valores ausentes en todas las variables excepto EDAD_MADRE, vamos a proceder con su imputación.
 
-Para la imputación de los valores perdidos sobre el peso de la madre vamos a utilizar un modelo de regresión ya que disponemos de variables como IMC y ALTURA_MADRE que nos van a ayudar a encontrar dichos valores. Pero primero debemos cambiar los valores centinela a NaN para que no afecten a la calidad del modelo de regresión.
+
+Cambiamos los valores centinela a NaN para que no afecten a la calidad del modelo de regresión.
 
 
 ```{r}
@@ -275,66 +297,76 @@ summary(data2[,numvars])
 ```
 
 
-## Imputación missing values PESO_MADRE
+Vamos a ver si con modelos de regresión lineal podemos rellenar algunos de estos valores ausentes:
 
-
-Encontramos una fuerte relación entre el peso de la madre la altura y la edad, por lo que vamos a imputar los valores a través de un modelo de regresión lineal.
 
 ```{r}
-modelo_peso <- lm(PESO_NACER_GM ~ IMC + 
-                    RAZA_MADRE, data = data2)
-summary(modelo_peso)
+modelo_altura1 <- lm(ALTURA_MADRE ~ PESO_MADRE_LB, data = data2)
+summary(modelo_altura1)
+```
+
+```{r}
+modelo_altura2 <- lm(ALTURA_MADRE ~ PESO_MADRE_LB + EDAD_MADRE, data = data2)
+summary(modelo_altura2)
+```
+
+```{r}
+modelo_altura3 <- lm(ALTURA_MADRE ~ PESO_MADRE_LB + EDAD_MADRE + RAZA_MADRE, data = data2)
+summary(modelo_altura3)
 ```
 
 
+Contrario a lo que al principio podríamos pensar, la altura de la madre no se puede aproximar con modelos de regresión lineal simple o múltiple con los datos que tenemos. En todos ellos tenemos un $R^2$ ajustado por debajo del 12%. Tenemos que desestimar los modelos de regresión.
+
+
 ```{r}
-sum(is.na(data2$PESO_MADRE_LB))
-i_peso <- is.na(data2$PESO_MADRE_LB)
-data2$PESO_MADRE_LB[i_peso] <- predict(modelo_peso, newdata = data2[i_peso,])
+modelo_peso1 <- lm(PESO_MADRE_LB ~ ALTURA_MADRE, data = data2)
+summary(modelo_peso1)
+```
 
-sum(is.na(data2$PESO_MADRE_LB))
+```{r}
+modelo_peso2 <- lm(PESO_MADRE_LB ~ ALTURA_MADRE + EDAD_MADRE, data = data2)
+summary(modelo_peso2)
+```
 
+```{r}
+modelo_peso3 <- lm(PESO_MADRE_LB ~ ALTURA_MADRE + EDAD_MADRE + RAZA_MADRE, data = data2)
+summary(modelo_peso3)
+```
+
+Como era de esperar después del resultado anterior, tampoco se puede estimar el peso en función de la altura y las otras características físicas de la madre.
+
+Esta aproximación si la hemos visto funcionar en otros casos, como puede ser conjuntos de deportistas. En esos casos la altura marca muy certeramente el peso, dado que para tener una buena condición física el IMC es relativamente parecido en todos y por tanto se puede ajustar bastante bien altura y peso en caso de datos ausentes.
+
+Lamentablemente, este es el caso en nuestro dataset. Lo único que se puede hacer es borrar los registros con datos ausentes.
+
+```{r}
+data2 <- data2[!(is.na(data2$PESO_MADRE_LB)| is.na(data2$ALTURA_MADRE)),]
+summary(data2[,numvars])
 
 ```
 
-## Imputación missing values ALTURA_MADRE
+### Imputación valores ausentes de IMC en aquellos que tenemos altura y peso
 
-
-```{r}
-modelo_altura <- lm(ALTURA_MADRE ~ PESO_MADRE_LB + EDAD_MADRE, data = data2)
-summary(modelo_altura)
-```
-
+Después de este borrado la variable IMC tiene 229 datos ausentes, pero este atributo tiene una fórmula directa para su cálculo => peso (lb) x 730 / [estatura (in)]^2
 
 ```{r}
-sum(is.na(data2$ALTURA_MADRE))
-
-
-i_altura <- is.na(data2$ALTURA_MADRE)
-data2$ALTURA_MADRE[i_altura] <- predict(modelo_altura, newdata = data2[i_altura,])
-
-sum(is.na(data2$ALTURA_MADRE))
-
-```
-
-## Imputación missing values IMC
-
-Calculamos el IMC para los valores perdidos con la fórmula peso (lb) x 0,453592 / [estatura (cm)]^2
-```{r}
-
 sum(is.na(data2$IMC))
-
 
 i_IMC <- is.na(data2$IMC)
-data2$IMC[i_IMC] <- (data2$PESO_MADRE_LB[i_IMC]*0.453592)/data2$ALTURA_MADRE[i_IMC]**2
+data2$IMC[i_IMC] <- (data2$PESO_MADRE_LB[i_IMC]*703)/data2$ALTURA_MADRE[i_IMC]^2
 
 sum(is.na(data2$IMC))
 
+summary(data2$IMC[i_IMC])
+hist(data2$IMC[i_IMC], main = "IMC Calculados", xlab = "IMC ausentes")
 ```
+
+El cálculo de estos IMC revela que los datos de altura/peso o no son correctos, o tenemos mujeres en categoría de riesgo bien por delgadez extrema (IMC<15) u obesidad mórbida (IMC>40). Estos datos los vamos a filtrar posteriormente en el tratamiento de outliers.
 
 Imputación missing values N_CIGARRILLOS
 
-Imputamos los valores perdidos del número de cigarrillos por la mediana.
+Imputamos los valores ausentes del número de cigarrillos por la mediana.
 ```{r}
 
 sum(is.na(data2$N_CIGARRILLOS))
@@ -351,7 +383,6 @@ median(data2$N_CIGARRILLOS[!i_cig])
 
 Imputación missing values GANANCIA_PESO_MADRE
 
-
 ```{r}
 sum(is.na(data2$GANANCIA_PESO_MADRE))
 
@@ -359,6 +390,7 @@ i_gpes <- is.na(data2$GANANCIA_PESO_MADRE)
 data2$GANANCIA_PESO_MADRE[i_gpes] <- median(data2$GANANCIA_PESO_MADRE[!i_gpes])
 
 sum(is.na(data2$GANANCIA_PESO_MADRE))
+median(data2$GANANCIA_PESO_MADRE)
 ```
 
 Imputación missing values PESO_NACER_GM
@@ -371,26 +403,18 @@ i_gpesn <- is.na(data2$PESO_NACER_GM)
 data2$PESO_NACER_GM[i_gpesn] <- median(data2$PESO_NACER_GM[!i_gpesn])
 
 sum(is.na(data2$PESO_NACER_GM))
+median(data2$PESO_NACER_GM)
 ```
 
 ```{r}
 summary(data2[,numvars])
 ```
 
-Procedemos a eliminar los registros cuyos nas no han podido ser imputados
-
-
-
-```{r}
-data2 <- data2[!(is.na(data2$PESO_MADRE_LB) | is.na(data2$ALTURA_MADRE) | is.na(data2$IMC)) ,]
-summary(data2[,numvars])
-```
-
-## Identificación y tratamiento de Outliers
+### Identificación y tratamiento de Outliers
 
 Los valores extremos pueden alterar las propiedades de las herramientas analítico estadísticas dando como resultado conclusiones erróneas en nuestros análisis. Vamos a tratar los valores atípicos de cada una da las variables.
 
-## Identificación para las variables de la madre.
+### Identificación para las variables de la madre.
 
 ```{r}
 conf2x3 = matrix(c(1:6), nrow=2, byrow=TRUE)
@@ -407,69 +431,104 @@ boxplot(data2$GANANCIA_PESO_MADRE, xlab = "GANANCIA_PESO_MADRE",col="red")
 Porcentaje de outliers en las variables
 
 ```{r}
+n_data2 <- nrow(data2)
 
-length(boxplot.stats(data2$EDAD_MADRE)$out)/nrow(data2)*100
-length(boxplot.stats(data2$PESO_MADRE_LB)$out)/nrow(data2)*100
-length(boxplot.stats(data2$ALTURA_MADRE)$out)/nrow(data2)*100
-length(boxplot.stats(data2$IMC)$out)/nrow(data2)*100
-length(boxplot.stats(data2$N_CIGARRILLOS)$out)/nrow(data2)*100
-length(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)/nrow(data2)*100
+sprintf("%% Outliers edad de la madre %0.2f%%", length(boxplot.stats(data2$EDAD_MADRE)$out)/n_data2*100)
+sprintf("%% Outliers IMC de la madre %0.2f%%", length(boxplot.stats(data2$IMC)$out)/n_data2*100)
+sprintf("%% Outliers peso de la madre %0.2f%%", length(boxplot.stats(data2$PESO_MADRE_LB)$out)/n_data2*100)
+sprintf("%% Outliers altura de la madre %0.2f%%", length(boxplot.stats(data2$ALTURA_MADRE)$out)/n_data2*100)
+sprintf("%% Outliers cigarrillos fumados %0.2f%%", length(boxplot.stats(data2$N_CIGARRILLOS)$out)/n_data2*100)
+sprintf("%% Outliers ganancia de peso  de la madre %0.2f%%", length(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)
+        /n_data2*100)
 
 ```
 
-## Discretización de la variable N_CIGARRILLOS
+### Discretización de la variable N_CIGARRILLOS
 
-La variable N_CIGARRILLOS presenta un porcentaje muy elevado de outliers y además el rango de la variable es demasiado elevado por lo que se va a proceder a discretizar la variable y así mantener sus propiedades.
+La variable N_CIGARRILLOS presenta un porcentaje importante de outliers y además el rango de la variable es demasiado elevado por lo que se va a proceder a discretizar la variable y así mantener sus propiedades.
 
 
 ```{r}
-data2$N_CIGARRILLOS <- cut(data2$N_CIGARRILLOS, c(-Inf,10,20,40,Inf), labels = c("menos de 10", "entre 10 y 20", "entre 20 y 40", "40 o más"), ordered=TRUE)
+data2$N_CIGARRILLOS <- cut(data2$N_CIGARRILLOS, c(-Inf,0,10,20,40,Inf), 
+                           labels = c("No fumadora", "menos de 10", "entre 10 y 20", "entre 20 y 40", "40 o más"),
+                           ordered = TRUE)
 
 summary(data2$N_CIGARRILLOS)
 
 ```
 
-## Tratamiento Outliers EDAD_MADRE
+### Tratamiento Outliers EDAD_MADRE
 
 ```{r}
-length(boxplot.stats(data2$EDAD_MADRE)$out)/nrow(data2)*100
-```
-```{r}
+sprintf("%% Outliers edad de la madre %0.2f%%", length(boxplot.stats(data2$EDAD_MADRE)$out)/n_data2*100)
 unique(boxplot.stats(data2$EDAD_MADRE)$out)
 ```
 
-Los valores extremos para la variable EDAD_MADRE suponen el 0.13% de la muestra, observamos que estos pesos son perfectamente factibles y no provienen de ningún error en los datos por lo que no será necesario realizar ningún tratamiento.  
+Los valores extremos para la variable EDAD_MADRE suponen el 0.12% de la muestra, observamos que estas edades son perfectamente factibles en nuestros días, y no provienen de ningún error en los datos por lo que no será necesario realizar ningún tratamiento.  
 
-## Tratamiento Outliers PESO_MADRE
 
-```{r}
-length(boxplot.stats(data2$PESO_MADRE_LB)$out)/nrow(data2)*100
-```
-```{r}
-unique(boxplot.stats(data2$PESO_MADRE)$out*0.453592)
-```
-
-Los valores extremos para PESO_MADRE son factibles y no proceden de un error de imputación de datos, sin embargo, nuestro estudio se basa en la suposición de que la madre cumple con unas condiciones estándar. Para pesos mayores a 100 Kg consideramos que existen condiciones que pueden alterar las propiedades de los datos para el objetivo de nuestro análisis por lo que procedemos a eliminar dichos registros.
-
+### Tratamiento Outliers IMC
 
 ```{r}
-data2 <- data2[data2$PESO_MADRE_LB <= 247,] 
+sprintf("%% Outliers IMC de la madre %0.2f%%", length(boxplot.stats(data2$IMC)$out)/n_data2*100)
+head(unique(boxplot.stats(data2$IMC)$out),50)
+length(unique(boxplot.stats(data2$IMC)$out))
+sum(unique(boxplot.stats(data2$IMC)$out)<15)
+sum(unique(boxplot.stats(data2$IMC)$out)>40)
 ```
 
+En la variable IMC encontramos datos de madres que presentan obesidad mórbida o delgadez extrema y valores que están claramente mal imputados. 
 
-## Tratamiento Outliers ALTURA_MADRE
+En primer lugar como disponemos de la altura y el peso vamos a imputar los valores correctos, si no lo son en base a la altura y peso registrados. Según la OMS un índice por debajo de 15 supone una delgadez severa, en los datos vemos valores por debajo de 16 e incluso por debajo de 1 que nos indican la presencia de valores mal imputados. De igual forma, por la parte alta, hay valores por encima de 40
 
 ```{r}
-length(boxplot.stats(data2$ALTURA_MADRE)$out)/nrow(data2)*100
-```
-```{r}
-unique(boxplot.stats(data2$ALTURA_MADRE)$out)
-```
-```{r}
-unique(boxplot.stats(data2$ALTURA_MADRE)$out*2.54)
+i_imc <- which((data2$IMC < 16) | (data2$IMC > 40))
+length(i_imc)
+
+data2$IMC[i_imc] = ((data2$PESO_MADRE_LB[i_imc]*703)/(data2$ALTURA_MADRE[i_imc])^2)
 ```
 
-Como podemos observar los valores extremos provienen de mujeres con una estatura muy baja o muy alta, no apreciamos la presencia de errores de imputación en los datos, sin embargo, nos queremos centar en madres con condiciones estándar por lo que prescindimos de los valores atípicos.
+```{r}
+length(unique(boxplot.stats(data2$IMC)$out))
+```
+
+Como podemos ver el error no proviene de un mal calculo del IMC sino que una de las dos variables Altura o Peso o las dos están mal imputadas dando valores en IMC sin sentido.
+
+```{r}
+head(unique(boxplot.stats(data2$IMC)$out),50)
+length(unique(boxplot.stats(data2$IMC)$out))
+sum(unique(boxplot.stats(data2$IMC)$out)<15)
+sum(unique(boxplot.stats(data2$IMC)$out)>40)
+```
+
+El resto de outliers corresponden con madres con obesidad mórbida o delgadez extrema, y por tanto factor de riesgo. Excluimos estos registros del análisis final.
+
+```{r}
+i_imc <- which((data2$IMC >= 16) & (data2$IMC <= 40))
+data2 <- data2[i_imc,] 
+n_data2 <- nrow(data2)
+```
+
+
+### Tratamiento Outliers PESO_MADRE
+
+```{r}
+sprintf("%% Outliers peso de la madre %0.2f%%", length(boxplot.stats(data2$PESO_MADRE_LB)$out)/n_data2*100)
+head(sort(unique(boxplot.stats(data2$PESO_MADRE_LB)$out)))
+tail(sort(unique(boxplot.stats(data2$PESO_MADRE_LB)$out)))
+```
+
+Los valores extremos para PESO_MADRE son factibles y no parece que procedan de errores de imputación de datos, sin embargo, nuestro estudio se basa en la suposición de que la madre cumple con unas condiciones estándar, entre las que se encuentran sin factores de riesgos por obesidad. 
+
+### Tratamiento Outliers ALTURA_MADRE
+
+```{r}
+sprintf("%% Outliers altura de la madre %0.2f%%", length(boxplot.stats(data2$ALTURA_MADRE)$out)/n_data2*100)
+head(sort(unique(boxplot.stats(data2$ALTURA_MADRE)$out)))
+tail(sort(unique(boxplot.stats(data2$ALTURA_MADRE)$out)))
+```
+
+Como podemos observar los valores extremos provienen de mujeres con una estatura muy baja o muy alta, no apreciamos la presencia de errores de imputación en los datos, sin embargo, nos queremos centrar en madres con condiciones estándar por lo que prescindimos de los valores atípicos.
 
 
 ```{r}
@@ -479,55 +538,16 @@ l_inf <- quantile25-1.5*IQR(data2$ALTURA_MADRE)
 l_sup <- quantile75+1.5*IQR(data2$ALTURA_MADRE)
 
 data2 <- data2[data2$ALTURA_MADRE > l_inf & data2$ALTURA_MADRE < l_sup, ]
+n_data2 <- nrow(data2)
 ```
 
-
-## Tratamiento Outliers IMC
-
-```{r}
-length(boxplot.stats(data2$IMC)$out)/nrow(data2)*100
-```
-```{r}
-head(unique(boxplot.stats(data2$IMC)$out),50)
-```
-
-En la variable IMC encontramos datos de madres que presentan obesidad y valores que han sido claramente mal imputados. 
-
-En primer lugar como disponemos de la altura y el peso vamos a imputar los valores erroneos. Según la OMS un índice por debajo de 16 supone una delgadez severa, en los datos vemos valores por debajo de 16 e incluso por debajo de 1 que nos indican la presencia de valores mal imputados.`
+### Tratamiento Outliers GANANCIA_PESO_MADRE
 
 ```{r}
-i_imc <- which(data2$IMC < 16)
-length(i_imc)
-
-data2$IMC[i_imc] = ((data2$PESO_MADRE_LB[i_imc]*0.453592)/(data2$PESO_MADRE_LB[i_imc]*2.54)**2)*10000
-
-```
-
-```{r}
-length(data2$IMC[i_imc])
-```
-
-Como podemos ver el error no proviene de un mal calculo del IMC sino que una de las dos variables Altura o Peso o las dos estan mal imputadas dando valores en IMC sin sentido.
-
-Vamos a proceder a prescindir de los valores que estan por debajo de 16 en IMC.
-
-```{r}
-head(unique(boxplot.stats(data2$IMC)$out),50)
-```
-El resto de outliers corresponden con madres con obesidad de clase tres, estos datos son válidos y los incluiremos en el análisis.
-
-```{r}
-data2 <- data2[data2$IMC > 16,]
-```
-
-
-## Tratamiento Outliers GANANCIA_PESO_MADRE
-
-```{r}
-length(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)/nrow(data2)*100
-```
-```{r}
-head(unique(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)*0.453592,50)
+sprintf("%% Outliers ganancia de peso  de la madre %0.2f%%", length(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)
+        /n_data2*100)
+head(sort(unique(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)),10)
+tail(sort(unique(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)),10)
 ```
 La ganancia de peso durante el embarazo es factible, sin embargo, vamos a prescindir de los valores extremos ya que no suponen un número elevado de la muestra y mejoramos las propiedades de la muestra.
 
@@ -539,6 +559,7 @@ l_inf <- quantile25-1.5*IQR(data2$GANANCIA_PESO_MADRE)
 l_sup <- quantile75+1.5*IQR(data2$GANANCIA_PESO_MADRE)
 
 data2 <- data2[data2$GANANCIA_PESO_MADRE > l_inf & data2$GANANCIA_PESO_MADRE < l_sup, ]
+n_data2 <- nrow(data2)
 ```
 
 
@@ -554,38 +575,157 @@ boxplot(data2$N_CIGARRILLOS, xlab = "N_CIGARRILLOS",col="green")
 boxplot(data2$GANANCIA_PESO_MADRE, xlab = "GANANCIA_PESO_MADRE",col="green")
 ```
 
-## Identificación para las variable PESO_NACER_GM del niño
+### Identificación para las variable PESO_NACER_GM del niño
 
 ```{r}
 boxplot(data2$PESO_NACER_GM, xlab = "PESO_NACER_GM",col="red")
 ```
 
 ```{r}
-length(boxplot.stats(data2$PESO_NACER_GM)$out)/nrow(data2)*100
+sprintf("%% Outliers del peso del bebe al nacer %0.2f%%", 
+        length(boxplot.stats(data2$PESO_NACER_GM)$out)/n_data2*100)
+head(sort(unique(boxplot.stats(data2$PESO_NACER_GM)$out)),10)
+tail(sort(unique(boxplot.stats(data2$PESO_NACER_GM)$out)),10)
 ```
 
-```{r}
-head(unique(boxplot.stats(data2$PESO_NACER_GM)$out))
-```
-
-Comprobamos que los valores son factibles y no se deben a ningún error de imputación, sin embargo, la presencia de outliers es bastante baja y consideramos que puede existir una mejora de las propiedades de los datos si prescindimos de ellos.
-
-```{r}
-quantile25 <- quantile(data2$PESO_NACER_GM,0.25)
-quantile75 <- quantile(data2$PESO_NACER_GM,0.75)
-l_inf <- quantile25-1.5*IQR(data2$PESO_NACER_GM)
-l_sup <- quantile75+1.5*IQR(data2$PESO_NACER_GM)
-
-data2 <- data2[data2$PESO_NACER_GM > l_inf & data2$PESO_NACER_GM < l_sup, ]
-```
+Comprobamos que los valores son factibles y no se deben a ningún error de imputación. No necesita ningún tratamiento adicional.
 
 ```{r}
 boxplot(data2$PESO_NACER_GM, xlab = "PESO_NACER_GM",col="green")
 ```
 
+
+Con este tratamiento consideramos que el dataset está preparado para los análisis que nos hemos planteado en este práctica. Vamos a salvar este dataset ya limpio en el fichero csv US2018_births_clean.csv
+
 ```{r}
-head(data2)
+# write.csv(data2, "US2018_births_clean.csv", sep = ";", col.names = TRUE, fileEncoding = "Latin1" )
 ```
+
+
+Una vez limpios los datos vamos a proceder a realizar nuestros análisis y a resolver las cuestiones expresadas anteriormente.
+
+
+
+## <span style="color:darkblue">4. Análisis de los datos</span>
+
+
+## <span style="color:darkblue">4.1 Selección de los grupos de datos que se quieren analizar/comparar (planificación de los análisis a aplicar).</span>
+
+```{r}
+#RAZA
+madres_rb <- data2$EDAD_MADRE[data2$RAZA_MADRE == "Caucasiana"]
+madres_rn <- data2$EDAD_MADRE[data2$RAZA_MADRE == "Afroamericana"]
+
+#ESTADO CIVIL
+madres_s <- data2$EDAD_MADRE[data2$ESTADO_CIVIL == "Soltera"]
+madres_c <- data2$EDAD_MADRE[data2$ESTADO_CIVIL == "Casada"]
+
+#EDUCACION
+madres_ei <- data2$EDAD_MADRE[data2$EDUC_MADRE == "8th grado o menos" |
+                              data2$EDUC_MADRE == "De 9th a 12th grado sin diploma" |
+                              data2$EDUC_MADRE == "Escuela secundaria o GED"]
+
+madres_ei <- data2$EDAD_MADRE[!(data2$EDUC_MADRE == "8th grado o menos" |
+                              data2$EDUC_MADRE == "De 9th a 12th grado sin diploma" |
+                              data2$EDUC_MADRE == "Escuela secundaria o GED")]
+
+```
+
+## <span style="color:darkblue">4.2 Comprobación de la normalidad y homogeneidad de la varianza</span>
+
+En primer lugar, nuestras cuestiones se basan en la edad de la madre por tanto debemos contrastar si esta sigue una distribución normal y así realizar contrastes de hipótesis paramétricos o no paramétricos.
+
+### Distribución de la variable EDAD_MADRE
+
+```{r}
+pl <- ggplot(data2, aes(x=EDAD_MADRE))
+pl2 = pl + geom_histogram(binwidth=1, aes(fill=..count..), col='black')
+pl2 + xlab('EDAD_MADRE') + ylab('Count') + ggtitle('Histograma EDAD_MADRE')
+```
+
+Vamos a aplicar el test de normalidad de Anderson Darling.
+
+```{r}
+library(nortest)
+ad.test(data2$EDAD_MADRE)
+```
+
+Como podemos ver el p_value es muy inferior a 0.05 y podemos asegurar que la variable sigue una distribución normal.
+
+
+¿Son los grupos de pares homocedásticos? Test de Fligner-Killeen
+```{r}
+#fligner.test(madres_rb ~ madres_rn)
+```
+
+
+## <span style="color:darkblue">4.3 Aplicación de pruebas estadísticas para comparar los grupos de datos. En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis, correlaciones, regresiones, etc. Aplicar al menos tres métodos de análisis diferentes.</span>
+
+### ¿Las madres de raza blanca y raza negra tienen su primer hijo a la misma edad?
+
+```{r}
+tmp <- rbind(data.frame(raza = "BLANCA", edad = madres_rb),
+       data.frame(raza = "NEGRA", edad = madres_rn))
+
+ggplot(tmp, aes(x = edad, fill = raza)) + geom_density(alpha = 0.3)
+```
+
+
+### ¿Que factores sociológicos ,fisiológicos y culturales hacen que una madre tenga por primera vez un hijo?
+### Análisis visual de las variables
+
+
+```{r}
+ggplot(data=data2,aes(x=EDAD_MADRE,fill=PRIMER_EMBARAZO)) +
+geom_bar(aes(x=EDAD_MADRE), stat = "count") + 
+theme(axis.text.x = element_text(angle = 75, vjust = 1, hjust=1)) + 
+   ggtitle('EDAD_MADRE vs PRIMER_EMBARAZO')
+```
+
+```{r}
+ggplot(data=data2,aes(x=ESTADO_CIVIL,fill=PRIMER_EMBARAZO)) +
+geom_bar(aes(x=ESTADO_CIVIL), stat = "count") + 
+theme(axis.text.x = element_text(angle = 75, vjust = 1, hjust=1)) + 
+   ggtitle('ESTADO_CIVIL vs PRIMER_EMBARAZO')
+```
+
+
+```{r}
+ggplot(data=data2,aes(x=RAZA_MADRE,fill=PRIMER_EMBARAZO)) +
+geom_bar(aes(x=RAZA_MADRE), stat = "count") + 
+theme(axis.text.x = element_text(angle = 75, vjust = 1, hjust=1)) + 
+   ggtitle('RAZA_MADRE vs PRIMER_EMBARAZO')
+```
+
+```{r}
+ggplot(data=data2,aes(x=EDUC_MADRE,fill=PRIMER_EMBARAZO)) +
+geom_bar(aes(x=EDUC_MADRE), stat = "count") + 
+theme(axis.text.x = element_text(angle = 75, vjust = 1, hjust=1)) + 
+   ggtitle('EDUC_MADRE vs PRIMER_EMBARAZO')
+```
+
+
+```{r}
+model.logist1=glm(formula=data2$PRIMER_EMBARAZO~data2$EDAD_MADRE + data2$ESTADO_CIVIL + data2$RAZA_MADRE + data2$EDUC_MADRE ,family=binomial(link=logit))
+summary(model.logist1)
+```
+
+
+
+## CURVA ROC DEL MODELO
+
+```{r}
+library(pROC)
+# Predicciones del modelo
+prob=predict(model.logist1, data, type="response")
+# Análisis ROC
+r = roc(data2$PRIMER_EMBARAZO, prob, data=data,auc=T,ci=T)
+```
+```{r}
+plot.roc(r ,print.auc=T,print.thres = "best",
+          col="blue",xlab="Especificidad",ylab="Sensibilidad")
+```
+
 
 
 
