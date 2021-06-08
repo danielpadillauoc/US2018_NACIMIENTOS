@@ -3,15 +3,28 @@ title: "Práctica 2 - Tipología y ciclo de vida de los datos"
 author: "Daniel Padilla Ortega y Fernando Álamo"
 date: "Junio-2021"
 output:
-  html_document:
+  pdf_document: 
     toc: yes
-    df_print: paged
-  pdf_document:
-    toc: yes
+    toc_depth: 5
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r wrap-hook}
+library(knitr)
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
 ```
 
 ```{r librerias, include=FALSE}
@@ -157,19 +170,20 @@ Uno de los análisis que queremos realizar es sobre la influencia del nivel de e
 
 El primer paso es tratar los registros con valores ausentes en alguna de las variables PRIOTERM, PRIORLIVE y PRIORDEAD. En este caso, 99 es el valor centinela de dato no válido.
 
-```{r}
-nrow(data2[data2$PRIORTERM  == 99 | data2$PRIORLIVE == 99 | data2$PRIORDEAD == 99 ,])/nrow(data2)*100
+```{r, linewidth=95}
+nrow(data2[data2$PRIORTERM  == 99 | data2$PRIORLIVE == 99 | data2$PRIORDEAD == 99 ,])/ 
+    nrow(data2)*100
 ```
 
 El porcentaje de valores ausentes es del 0.43% de los registros por lo que podemos eliminarlos sin perder información relevante en nuestros datos, ni producir sesgos aparentes.
 
-```{r}
+```{r, linewidth=95}
 data2 <- data2[!(data2$PRIORTERM  == 99 | data2$PRIORLIVE == 99 | data2$PRIORDEAD == 99) ,]
 ```
 
 Una vez borrados, generamos el atributo PRIMER_EMBARAZO, como variable dicotómica. 0 si no es el primero, 1 si lo es.
 
-```{r}
+```{r, linewidth=95}
 data2$PRIMER_EMBARAZO = 0
 data2$PRIMER_EMBARAZO[data2$PRIORTERM  == 0 & data2$PRIORLIVE == 0 & data2$PRIORDEAD == 0 ] = 1
 data2 <- data2[,-(9:11)]
@@ -178,10 +192,10 @@ names(data2)
 
 Para facilidad de uso vamos a cambiar el nombre de las variables y reordenar los campos por afinidad.
 
-```{r}
-names(data2) <- c("IMC","N_CIGARRILLOS","PESO_NACER_GM","ESTADO_CIVIL","EDAD_MADRE","EDUC_MADRE",
-                 "RAZA_MADRE","ALTURA_MADRE","PESO_MADRE_LB","SEXO_HIJO","GANANCIA_PESO_MADRE",
-                 "PRIMER_EMBARAZO")
+```{r, linewidth=95}
+names(data2) <- c("IMC","N_CIGARRILLOS","PESO_NACER_GM","ESTADO_CIVIL","EDAD_MADRE",
+                  "EDUC_MADRE", "RAZA_MADRE","ALTURA_MADRE","PESO_MADRE_LB","SEXO_HIJO",
+                  "GANANCIA_PESO_MADRE", "PRIMER_EMBARAZO")
 
 data2 <- data2[, c(5, 9, 8, 1, 4, 6, 7, 2, 12, 11, 10, 3 )]
 names(data2)
@@ -196,7 +210,7 @@ numvars <- c(1:4, 8, 10, 12)
 catvars <- c(5:7, 9 ,11)
 ```
 
-```{r}
+```{r, linewidth=95}
 names(data2[,catvars])
 summary(data2[,catvars])
 ```
@@ -207,7 +221,7 @@ Como precaución previa, vamos a ver como están distribuidas en el resto de var
 
 Para obtener las proporciones correctamente, lo primero que tenemos que poner es un valor a los NA, y a continuación observar las proporciones.
 
-```{r}
+```{r, linewidth=95}
 data2$ESTADO_CIVIL[is.na(data2$ESTADO_CIVIL)] = 0
 proportions(table(data2$ESTADO_CIVIL, data2$SEXO_HIJO), margin = 2)
 proportions(table(data2$ESTADO_CIVIL, data2$RAZA_MADRE), margin = 2) 
@@ -222,13 +236,13 @@ Llegado a este punto, y después de haber probado a imputar estos datos ausentes
 
 Borramos por tanto los registros con estado civil desconocido.
 
-```{r}
+```{r, linewidth=95}
 data2 <- data2[data2$ESTADO_CIVIL != 0,]
 nrow(data2)
 ```
 La educación va a ser un eje de análisis. Para ellos vamos a categorizar la educación en tres grupos, hasta primaria, hasta secundaria, universitarios y postuniversitarios.
 
-```{r}
+```{r, linewidth=95}
 data2$EDUC_MADRE <- cut(data2$EDUC_MADRE, c(-Inf,2,4,6,8,+Inf), 
                            labels = c("Primaria", "Secundaria", "Universitarios", 
                                       "Postuniversitarios", "Desconocido"),
@@ -239,7 +253,7 @@ El número de registros sigue siendo considerablemente alto, más de 2.2 millone
 
 Transformación del resto de las variables categóricas a factor.
 
-```{r}
+```{r, linewidth=95}
 data2$ESTADO_CIVIL <- factor(data2$ESTADO_CIVIL,
                                 levels = c(1:2),
                                 labels = c("Casada","Soltera"))
@@ -262,7 +276,7 @@ data2$SEXO_HIJO <- factor(data2$SEXO_HIJO)
 ```
 
 
-```{r}
+```{r, linewidth=95}
 summary(data2[,catvars])
 ```
 
@@ -277,7 +291,7 @@ Observamos la presencia de valores centinela que nos muestran la presencia de va
 
 Cambiamos los valores centinela a NaN para que no afecten a la calidad del modelo de regresión que vamos a intentar usar para rellenar valores ausentes.
 
-```{r}
+```{r, linewidth=95}
 data2$PESO_MADRE_LB[data2$PESO_MADRE_LB == 999.0] = NaN
 data2$ALTURA_MADRE[data2$ALTURA_MADRE == 99.0] = NaN
 data2$IMC[data2$IMC == 99.90] = NaN
@@ -289,7 +303,7 @@ summary(data2[,numvars])
 
 Cambiamos a medidas europeas para mayor facilidad de comprensión, es decir a kg y cm
 
-```{r}
+```{r, linewidth=95}
 data2$PESO_MADRE <- data2$PESO_MADRE_LB  * 0.453592
 data2$ALTURA_MADRE <- data2$ALTURA_MADRE * 2.54
 data2$GANANCIA_PESO_MADRE <- data2$GANANCIA_PESO_MADRE  * 0.453592
@@ -297,36 +311,36 @@ data2$GANANCIA_PESO_MADRE <- data2$GANANCIA_PESO_MADRE  * 0.453592
 data2<- select(data2, -PESO_MADRE_LB)
 ```
 
-### Aproximación de valores ausentes con modelos de regresión lineal*
+### Aproximación de valores ausentes con modelos de regresión lineal
 
-```{r}
+```{r, linewidth=95}
 modelo_altura1 <- lm(ALTURA_MADRE ~ PESO_MADRE, data = data2)
 summary(modelo_altura1)
 ```
 
-```{r}
+```{r, linewidth=95}
 modelo_altura2 <- lm(ALTURA_MADRE ~ PESO_MADRE + EDAD_MADRE, data = data2)
 summary(modelo_altura2)
 ```
 
-```{r}
+```{r, linewidth=95}
 modelo_altura3 <- lm(ALTURA_MADRE ~ PESO_MADRE + EDAD_MADRE + RAZA_MADRE, data = data2)
 summary(modelo_altura3)
 ```
 
 A diferencia de lo que se podría pensar en una primera instancia, la altura de la madre no se puede aproximar con modelos de regresión lineal simple o múltiple con los datos que tenemos. En todos ellos tenemos un $R^2$ ajustado por debajo del 12%. Tenemos que desestimar los modelos de regresión.
 
-```{r}
+```{r, linewidth=95}
 modelo_peso1 <- lm(PESO_MADRE ~ ALTURA_MADRE, data = data2)
 summary(modelo_peso1)
 ```
 
-```{r}
+```{r, linewidth=95}
 modelo_peso2 <- lm(PESO_MADRE ~ ALTURA_MADRE + EDAD_MADRE, data = data2)
 summary(modelo_peso2)
 ```
 
-```{r}
+```{r, linewidth=95}
 modelo_peso3 <- lm(PESO_MADRE ~ ALTURA_MADRE + EDAD_MADRE + RAZA_MADRE, data = data2)
 summary(modelo_peso3)
 ```
@@ -337,7 +351,7 @@ Esta aproximación si la hemos visto funcionar en otros casos, como puede ser co
 
 Lamentablemente, este es el caso en nuestro dataset. Lo único que se puede hacer es borrar los registros con datos ausentes.
 
-```{r}
+```{r, linewidth=95}
 data2 <- data2[!(is.na(data2$PESO_MADRE)| is.na(data2$ALTURA_MADRE)),]
 summary(data2[,numvars])
 
@@ -347,7 +361,7 @@ summary(data2[,numvars])
 
 Después de este borrado la variable IMC tiene 229 datos ausentes, pero este atributo tiene una fórmula directa para su cálculo => $peso (kg) / estatura^2(m^2)$
 
-```{r}
+```{r, linewidth=95}
 data2$IMC <- data2$PESO_MADRE/(data2$ALTURA_MADRE/100)^2
 
 hist(data2$IMC[data2$IMC], breaks = 50, main = "IMC Calculados", xlab="")
@@ -359,7 +373,7 @@ El cálculo de estos IMC revela que los datos de altura/peso o no son correctos,
 
 Imputamos los valores ausentes del número de cigarrillos por la mediana.
 
-```{r}
+```{r, linewidth=95}
 
 sum(is.na(data2$N_CIGARRILLOS))
 
@@ -375,7 +389,7 @@ median(data2$N_CIGARRILLOS)
 
 ### Imputación missing values GANANCIA_PESO_MADRE
 
-```{r}
+```{r, linewidth=95}
 sum(is.na(data2$GANANCIA_PESO_MADRE))
 
 i_gpes <- is.na(data2$GANANCIA_PESO_MADRE)
@@ -387,7 +401,7 @@ median(data2$GANANCIA_PESO_MADRE)
 
 ### Imputación missing values PESO_NACER_GM
 
-```{r}
+```{r, linewidth=95}
 sum(is.na(data2$PESO_NACER_GM))
 
 i_gpesn <- is.na(data2$PESO_NACER_GM)
@@ -396,7 +410,7 @@ data2$PESO_NACER_GM[i_gpesn] <- median(data2$PESO_NACER_GM[!i_gpesn])
 sum(is.na(data2$PESO_NACER_GM))
 median(data2$PESO_NACER_GM)
 ```
-```{r}
+```{r, linewidth=95}
 summary(data2[,numvars])
 ```
 
@@ -404,11 +418,11 @@ summary(data2[,numvars])
 
 Los valores extremos pueden alterar las propiedades de las herramientas analítico estadísticas dando como resultado conclusiones erróneas en nuestros análisis. Vamos a tratar los valores atípicos de cada una da las variables.
 
-#### Identificación para las variables de la madre.
+### Identificación para las variables de la madre.
 
 Una forma de tener una idea simple de como son las distribuciones de la variables, así como la identificación de ouliers, es dibujando los boxplot de las variables.
 
-```{r}
+```{r, linewidth=95}
 conf2x3 = matrix(c(1:6), nrow=2, byrow=TRUE)
 layout(conf2x3)
 
@@ -424,16 +438,21 @@ A simple vista se aprecia la gran cantidad de outliers que tenemos en la muestra
 
 Porcentaje de outliers en las variables
 
-```{r}
+```{r, linewidth=95}
 n_data2 <- nrow(data2)
 
-sprintf("%% Outliers edad de la madre %0.2f%%", length(boxplot.stats(data2$EDAD_MADRE)$out)/n_data2*100)
-sprintf("%% Outliers IMC de la madre %0.2f%%", length(boxplot.stats(data2$IMC)$out)/n_data2*100)
-sprintf("%% Outliers peso de la madre %0.2f%%", length(boxplot.stats(data2$PESO_MADRE_LB)$out)/n_data2*100)
-sprintf("%% Outliers altura de la madre %0.2f%%", length(boxplot.stats(data2$ALTURA_MADRE)$out)/n_data2*100)
-sprintf("%% Outliers cigarrillos fumados %0.2f%%", length(boxplot.stats(data2$N_CIGARRILLOS)$out)/n_data2*100)
-sprintf("%% Outliers ganancia de peso  de la madre %0.2f%%", length(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)
-        /n_data2*100)
+sprintf("%% Outliers edad de la madre %0.2f%%", 
+        length(boxplot.stats(data2$EDAD_MADRE)$out)/n_data2*100)
+sprintf("%% Outliers IMC de la madre %0.2f%%", 
+        length(boxplot.stats(data2$IMC)$out)/n_data2*100)
+sprintf("%% Outliers peso de la madre %0.2f%%", 
+        length(boxplot.stats(data2$PESO_MADRE_LB)$out)/n_data2*100)
+sprintf("%% Outliers altura de la madre %0.2f%%", 
+        length(boxplot.stats(data2$ALTURA_MADRE)$out)/n_data2*100)
+sprintf("%% Outliers cigarrillos fumados %0.2f%%", 
+        length(boxplot.stats(data2$N_CIGARRILLOS)$out)/n_data2*100)
+sprintf("%% Outliers ganancia de peso  de la madre %0.2f%%", 
+        length(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)/n_data2*100)
 
 ```
 
@@ -442,10 +461,10 @@ sprintf("%% Outliers ganancia de peso  de la madre %0.2f%%", length(boxplot.stat
 La variable N_CIGARRILLOS presenta un porcentaje importante de outliers y además el rango de la variable es demasiado elevado por lo que se va a proceder a discretizar la variable y así mantener sus propiedades.
 
 
-```{r}
+```{r, linewidth=95}
 data2$N_CIGARRILLOS <- cut(data2$N_CIGARRILLOS, c(-Inf,0,10,20,40,Inf), 
-                           labels = c("No fumadora", "menos de 10", "entre 10 y 20", "entre 20 y 40", "40 o más"),
-                           ordered = TRUE)
+                           labels = c("No fumadora", "menos de 10", "entre 10 y 20", 
+                                      "entre 20 y 40", "40 o más"), ordered = TRUE)
 
 summary(data2$N_CIGARRILLOS)
 
@@ -453,8 +472,9 @@ summary(data2$N_CIGARRILLOS)
 
 ### Tratamiento Outliers EDAD_MADRE
 
-```{r}
-sprintf("%% Outliers edad de la madre %0.2f%%", length(boxplot.stats(data2$EDAD_MADRE)$out)/n_data2*100)
+```{r, linewidth=95}
+sprintf("%% Outliers edad de la madre %0.2f%%", 
+        length(boxplot.stats(data2$EDAD_MADRE)$out)/n_data2*100)
 unique(boxplot.stats(data2$EDAD_MADRE)$out)
 ```
 
@@ -463,8 +483,9 @@ Los valores extremos para la variable EDAD_MADRE suponen el 0.12% de la muestra,
 
 ### Tratamiento Outliers IMC
 
-```{r}
-sprintf("%% Outliers IMC de la madre %0.2f%%", length(boxplot.stats(data2$IMC)$out)/n_data2*100)
+```{r, linewidth=95}
+sprintf("%% Outliers IMC de la madre %0.2f%%", 
+        length(boxplot.stats(data2$IMC)$out)/n_data2*100)
 head(sort(unique(boxplot.stats(data2$IMC)$out)),50)
 tail(sort(unique(boxplot.stats(data2$IMC)$out)),50)
 length(boxplot.stats(data2$IMC)$out)
@@ -473,7 +494,7 @@ sum(boxplot.stats(data2$IMC)$out>40)
 ```
 
 
-```{r}
+```{r, linewidth=95}
 i_imc <- which((data2$IMC >= 16) & (data2$IMC <= 40))
 data2 <- data2[i_imc,] 
 n_data2 <- nrow(data2)
@@ -483,8 +504,9 @@ hist(data2$IMC, breaks = 50, main = "IMC Calculados")
 
 ### Tratamiento Outliers PESO_MADRE
 
-```{r}
-sprintf("%% Outliers peso de la madre %0.2f%%", length(boxplot.stats(data2$PESO_MADRE_LB)$out)/n_data2*100)
+```{r, linewidth=95}
+sprintf("%% Outliers peso de la madre %0.2f%%", 
+        length(boxplot.stats(data2$PESO_MADRE_LB)$out)/n_data2*100)
 head(sort(unique(boxplot.stats(data2$PESO_MADRE_LB)$out)))
 tail(sort(unique(boxplot.stats(data2$PESO_MADRE_LB)$out)))
 ```
@@ -493,8 +515,9 @@ Después del tratamiento del IMC, hemos excluido también los outliers de peso.
 
 ### Tratamiento Outliers ALTURA_MADRE
 
-```{r}
-sprintf("%% Outliers altura de la madre %0.2f%%", length(boxplot.stats(data2$ALTURA_MADRE)$out)/n_data2*100)
+```{r, linewidth=95}
+sprintf("%% Outliers altura de la madre %0.2f%%", 
+        length(boxplot.stats(data2$ALTURA_MADRE)$out)/n_data2*100)
 length(boxplot.stats(data2$ALTURA_MADRE)$out)
 head(sort(unique(boxplot.stats(data2$ALTURA_MADRE)$out)))
 tail(sort(unique(boxplot.stats(data2$ALTURA_MADRE)$out)))
@@ -505,16 +528,16 @@ Como podemos observar los valores extremos provienen de mujeres con una estatura
 
 ### Tratamiento Outliers GANANCIA_PESO_MADRE
 
-```{r}
-sprintf("%% Outliers ganancia de peso  de la madre %0.2f%%", length(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)
-        /n_data2*100)
+```{r, linewidth=95}
+sprintf("%% Outliers ganancia de peso  de la madre %0.2f%%", 
+        length(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)/n_data2*100)
 head(sort(unique(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)),10)
 tail(sort(unique(boxplot.stats(data2$GANANCIA_PESO_MADRE)$out)),10)
 ```
 Consideramos que la ganancia de peso durante el embarazo es asimismo factible (embarazon múltiples, etc), por lo que aunque se puedan considerar outliers, van a aportar información al dataset.
 
 
-```{r}
+```{r, linewidth=95}
 conf2x3 = matrix(c(1:6), nrow=2, byrow=TRUE)
 layout(conf2x3)
 
@@ -528,11 +551,11 @@ boxplot(data2$GANANCIA_PESO_MADRE, xlab = "GANANCIA_PESO_MADRE",col="green")
 
 ### Identificación para las variable PESO_NACER_GM del niño
 
-```{r}
+```{r, linewidth=95}
 boxplot(data2$PESO_NACER_GM, xlab = "PESO_NACER_GM",col="red")
 ```
 
-```{r}
+```{r, linewidth=95}
 sprintf("%% Outliers del peso del bebe al nacer %0.2f%%", 
         length(boxplot.stats(data2$PESO_NACER_GM)$out)/n_data2*100)
 head(sort(unique(boxplot.stats(data2$PESO_NACER_GM)$out)),10)
@@ -543,12 +566,12 @@ El peso de los recien nacidos es complicado determinar un umbral de dato erróne
 
 Observando los valores superiores, tampoco hay un salto en un valor que podamos identificar como un error de input.
 
-```{r}
+```{r, linewidth=95}
 hist(data2$PESO_NACER_GM,breaks = 100, main = "Peso del bebé", xlab="")
 ```
 
 
-```{r}
+```{r, linewidth=95}
 plot(density(data2$PESO_NACER_GM), main = "Densidad de peso de los recien nacidos", xlab="")
 polygon(density(data2$PESO_NACER_GM) , col="light green", border="black")
 ```
@@ -558,8 +581,9 @@ De hecho al graficar con un histograma, o un diagrama de densidad, podemos decir
 
 Con este tratamiento consideramos que el dataset está preparado para los análisis que nos hemos planteado en este práctica. Vamos a salvar este dataset ya limpio en el fichero csv US2018_births_clean.csv
 
-```{r}
-write.csv(data2, "US2018_births_clean.csv", sep = ",", col.names = TRUE, fileEncoding = "Latin1" )
+```{r, linewidth=95}
+write.csv(data2, "US2018_births_clean.csv", sep = ",", col.names = TRUE, 
+          fileEncoding = "Latin1" )
 ```
 
 ## <span style="color:darkblue">4. Análisis de los datos</span>
@@ -569,7 +593,7 @@ write.csv(data2, "US2018_births_clean.csv", sep = ",", col.names = TRUE, fileEnc
 
 Nuestros análisis quieren responder preguntas tanto de índole sociológica (edad, estudios) como de índole biológica (edad, peso, raza), por tanto, vamos a hacer los siguientes grupos de datos a analizar.
 
-```{r}
+```{r, linewidth=95}
 #RAZA
 madres_rc <- data2[data2$RAZA_MADRE == "Caucasiana",]
 madres_raf <- data2[data2$RAZA_MADRE == "Afroamericana",]
@@ -594,14 +618,14 @@ madres_no_uni <- data2[data2$EDUC_MADRE == "Primaria" | data2$EDUC_MADRE == "Sec
 Estos son los grupos principales de análisis, sin embargo, como vamos a trabajar con diferentes condicionalidades, sobre el primer embarazo, o pesos de los bebes, decidimos para no cargar de variables el entorno y disminuir la dificultad de lectura, no generar todos los grupos de estudio.
 
 
-## <span style="color:darkblue">4.2 Comprobación de la normalidad y homogeneidad de la varianza</span>
+### <span style="color:darkblue">4.2 Comprobación de la normalidad y homogeneidad de la varianza</span>
 
 En primer lugar, nuestras cuestiones se basan en la edad de la madre y al peso del hijo por tanto debemos contrastar si estas siguen una distribución normal y así realizar contrastes de hipótesis paramétricos o no paramétricos.
 
 
 ***Normalidad de la variable EDAD***
 
-```{r}
+```{r, linewidth=95}
 pl <- ggplot(data2, aes(x=EDAD_MADRE))
 pl2 = pl + geom_histogram(binwidth=1, aes(fill=..count..), col='black')
 pl2 + xlab('EDAD_MADRE') + ylab('Count') + ggtitle('Histograma EDAD_MADRE')
@@ -609,7 +633,7 @@ pl2 + xlab('EDAD_MADRE') + ylab('Count') + ggtitle('Histograma EDAD_MADRE')
 
 Vamos a aplicar el test de normalidad de Anderson Darling.
 
-```{r}
+```{r, linewidth=95}
 ad.test(data2$EDAD_MADRE)
 ```
 
@@ -620,7 +644,7 @@ Dado que las preguntas que nos vamos a intentar responder son relativas a hipót
 
 ***Normalidad de la variable PESO_NACER_GM***
 
-```{r}
+```{r, linewidth=95}
 pl <- ggplot(data2, aes(x=PESO_NACER_GM))
 pl2 = pl + geom_histogram(binwidth=200, aes(fill=..count..), col='black')
 pl2 + xlab('PESO_NACER_GM') + ylab('Count') + ggtitle('Histograma PESO_NACER_GM')
@@ -628,7 +652,7 @@ pl2 + xlab('PESO_NACER_GM') + ylab('Count') + ggtitle('Histograma PESO_NACER_GM'
 
 Aplicando el test de normalidad de Anderson Darling.
 
-```{r}
+```{r, linewidth=95}
 ad.test(data2$PESO_NACER_GM)
 ```
 
@@ -644,7 +668,7 @@ Por el límite central ya sabemos que la medias de edad de las mujeres van a seg
 **EDAD MADRE CAUCASIANA VS EDAD MADRE AFROAMERICANA **
 
 Test sobre la varianza:
-```{r}
+```{r, linewidth=95}
 var.test(madres_rc$EDAD_MADRE, madres_raf$EDAD_MADRE)
 ```
 
@@ -653,7 +677,7 @@ El resultado nos indica que la varianza no es la misma en ambos grupos de muestr
 **EDAD MADRE CAUCASIANA PRIMER HIJO VS EDAD MADRE AFROAMERICANA PRIMER HIJO**
 
 Test sobre la varianza:
-```{r}
+```{r, linewidth=95}
 var.test(madres_rc_primer$EDAD_MADRE, madres_raf_primer$EDAD_MADRE)
 ```
 
@@ -661,7 +685,7 @@ var.test(madres_rc_primer$EDAD_MADRE, madres_raf_primer$EDAD_MADRE)
 
 Test sobre la varianza:
 
-```{r}
+```{r, linewidth=95}
 var.test(madres_rasi_primer$EDAD_MADRE, madres_r_no_asi_primer$EDAD_MADRE)
 ```
 
@@ -669,8 +693,10 @@ var.test(madres_rasi_primer$EDAD_MADRE, madres_r_no_asi_primer$EDAD_MADRE)
 **EDAD MADRE CON ESTUDIOS UNIVERSITARIOS SIENDO SU PRIMER HIJO VS EDAD MADRE SIN ESTUDIOS UNIVERSITARIOS SIENDO SU PRIMER HIJO**  
 
 Test sobre la varianza:
-```{r}
-var.test(madres_uni$EDAD_MADRE[madres_uni$PRIMER_EMBARAZO == "Si"], madres_no_uni$EDAD_MADRE[madres_no_uni$PRIMER_EMBARAZO == "Si"])
+
+```{r, linewidth=95}
+var.test(madres_uni$EDAD_MADRE[madres_uni$PRIMER_EMBARAZO == "Si"], 
+         madres_no_uni$EDAD_MADRE[madres_no_uni$PRIMER_EMBARAZO == "Si"])
 ```
 
 Como en el caso anterior, la varianza es diferente ya que tenemos un p_value muy inferior al nivel de significancia, 0.05.  Por tanto, usamos el mismo test que en el caso anterior
@@ -680,7 +706,7 @@ Todos los pares de grupos presentan heterocedasticidad por lo que a la hora de a
 
 
 
-## <span style="color:darkblue">4.3 Aplicación de pruebas estadísticas para comparar los grupos de datos. En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis, correlaciones, regresiones, etc. Aplicar al menos tres métodos de análisis diferentes.</span>
+### <span style="color:darkblue">4.3 Aplicación de pruebas estadísticas para comparar los grupos de datos. En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis, correlaciones, regresiones, etc. Aplicar al menos tres métodos de análisis diferentes.</span>
 
 
 ### ¿Las madres de raza caucasiana tienen hijos en media con mayor edad que las de raza afroamericana ?
@@ -698,7 +724,7 @@ Como las varianzas son diferentes, tal y como hemos comprobado en el test del pu
 
 Usando la función en r t.test con el parámetro var-equal = FALSE :
 
-```{r}
+```{r, linewidth=95}
 t.test(madres_rc$EDAD_MADRE, madres_raf$EDAD_MADRE, alternative = "greater", var.equal = FALSE)
 ```
 
@@ -719,14 +745,15 @@ Igual que en el caso anterior, las varianzas de los grupos son diferentes. Por t
 
 Usando la función en r t.test con los parámetros adecuados nos lo resuelve:
 
-```{r}
-t.test(madres_rc_primer$EDAD_MADRE, madres_raf_primer$EDAD_MADRE, alternative = "greater", var.equal = FALSE)
+```{r, linewidth=95}
+t.test(madres_rc_primer$EDAD_MADRE, madres_raf_primer$EDAD_MADRE, 
+       alternative = "greater", var.equal = FALSE)
 ```
 La diferencia aún es mayor.
 
 Llegado a este punto, podemos intentar hacer un test ANOVA para comprobar de una forma más sistemática si estas diferencias las encontramos en general entre todas las razas, tal y como podría sugerir el siguiente gráfico boxplot
 
-```{r}
+```{r, linewidth=95}
 col  <- c("dodgerblue","firebrick1","chartreuse3",
          "deeppink","darkorchid3","darkorange1")
 ggplot(data2, aes(x = RAZA_MADRE, y = EDAD_MADRE)) + geom_boxplot(color = col) 
@@ -750,8 +777,9 @@ Igual que en el caso anterior, las varianzas de los grupos son diferentes. Por t
 
 Usando la función en r t.test con los parámetros adecuados nos lo resuelve:
 
-```{r}
-t.test(madres_rasi_primer$EDAD_MADRE, madres_r_no_asi_primer$EDAD_MADRE, alternative = "greater", var.equal = FALSE)
+```{r, linewidth=95}
+t.test(madres_rasi_primer$EDAD_MADRE, madres_r_no_asi_primer$EDAD_MADRE, 
+       alternative = "greater", var.equal = FALSE)
 ```
 
 Efectivamente, las mujeres asiáticas tienen su primer hijo siendo en media más mayores que la media del resto de las razas.
@@ -759,7 +787,7 @@ Efectivamente, las mujeres asiáticas tienen su primer hijo siendo en media más
 
 LLegado a este punto vamos a ver como de bueno podría ser la raza como un elemento diferenciador de la media de la edad de las madres por raza mediante un ANOVA.
 
-```{r}
+```{r, linewidth=95}
 m_anova_raza <- aov(EDAD_MADRE ~ RAZA_MADRE, data = data2[data2$PRIMER_EMBARAZO=="Si",])
 summary(m_anova_raza)
 ```
@@ -768,7 +796,7 @@ Efectivamente, el test de ANOVA nos dice con un p-value mucho menor que 0.05, qu
 
 Revisamos varianzas por grupo.
 
-```{r}
+```{r, linewidth=95}
 bartlett.test(EDAD_MADRE ~ RAZA_MADRE, data2)
 ```
 
@@ -787,14 +815,16 @@ donde $\mu_{uni}$ es la media de edad de las mujeres con estudios superiores, y 
 
 Por el límite central ya sabemos que la medias de edad de las mujeres van a seguir una distribución normal y además como comprobamos anteriormente la varianza es diferente entre los grupos.
 
-```{r}
-t.test(madres_uni$EDAD_MADRE[madres_uni$PRIMER_EMBARAZO == "Si"], madres_no_uni$EDAD_MADRE[madres_no_uni$PRIMER_EMBARAZO == "Si"],
+```{r, linewidth=95}
+t.test(madres_uni$EDAD_MADRE[madres_uni$PRIMER_EMBARAZO == "Si"], 
+       madres_no_uni$EDAD_MADRE[madres_no_uni$PRIMER_EMBARAZO == "Si"],
        alternative = "greater", var.equal = FALSE)
 ```
 
 ***¿Podríamos decir que la diferencia es mayor de 4 años con un nivel de confianza del 99%?***
-```{r}
-t.test(madres_uni$EDAD_MADRE[madres_uni$PRIMER_EMBARAZO == "Si"], madres_no_uni$EDAD_MADRE[madres_no_uni$PRIMER_EMBARAZO == "Si"],
+```{r, linewidth=95}
+t.test(madres_uni$EDAD_MADRE[madres_uni$PRIMER_EMBARAZO == "Si"], 
+       madres_no_uni$EDAD_MADRE[madres_no_uni$PRIMER_EMBARAZO == "Si"],
        alternative = "greater", mu=4, conf.level=0.99, var.equal = FALSE)
 ```
 
@@ -806,7 +836,7 @@ El resultado es concluyente dado el p_value, efectivamente el nivel de estudios 
 
 Variables
 
-```{r}
+```{r, linewidth=95}
 PRIMER_EMBARAZO <- data2$PRIMER_EMBARAZO
 EDAD_MADRE <- data2$EDAD_MADRE
 ESTADO_CIVIL <- data2$ESTADO_CIVIL
@@ -817,26 +847,29 @@ EDUC_MADRE <- data2$EDUC_MADRE
 Vamos a evaluar diferentes modelos incluyendo nuevas variables acerca de la madre de manera que podamos obtener un modelo logístico que se ajuste de manera adecuada a los datos.  
 
 **Modelo1**
-```{r}
+```{r, linewidth=95}
 model.logist1=glm(formula=PRIMER_EMBARAZO~EDAD_MADRE ,family=binomial(link=logit))
 summary(model.logist1)
 ```
 
 **Modelo2**
-```{r}
-model.logist2=glm(formula=PRIMER_EMBARAZO~EDAD_MADRE + ESTADO_CIVIL ,family=binomial(link=logit))
+```{r, linewidth=95}
+model.logist2=glm(formula=PRIMER_EMBARAZO~EDAD_MADRE + ESTADO_CIVIL ,
+                  family=binomial(link=logit))
 summary(model.logist2)
 ```
 
 **Modelo3**
-```{r}
-model.logist3=glm(formula=PRIMER_EMBARAZO~EDAD_MADRE + ESTADO_CIVIL + RAZA_MADRE ,family=binomial(link=logit))
+```{r, linewidth=95}
+model.logist3=glm(formula=PRIMER_EMBARAZO~EDAD_MADRE + ESTADO_CIVIL + RAZA_MADRE ,
+                  family=binomial(link=logit))
 summary(model.logist3)
 ```
 
 **Modelo4**
-```{r}
-model.logist4=glm(formula=PRIMER_EMBARAZO~EDAD_MADRE + ESTADO_CIVIL + RAZA_MADRE + EDUC_MADRE ,family=binomial(link=logit))
+```{r, linewidth=95}
+model.logist4=glm(formula=PRIMER_EMBARAZO~EDAD_MADRE + ESTADO_CIVIL + RAZA_MADRE + EDUC_MADRE,
+                  family=binomial(link=logit))
 summary(model.logist4)
 ```
 
@@ -851,7 +884,7 @@ Modelo 4: PRIMER_EMBARAZO ~ EDAD_MADRE + ESTADO_CIVIL + RAZA_MADRE + EDUC_MADRE
 
 **Matriz de confusión de los modelos y cálculo de la sensibilidad y especificidad**
 
-```{r}
+```{r, linewidth=95}
 # Predicciones del modelo
 p1=predict(model.logist1, data2, type="response")
 p2=predict(model.logist2, data2, type="response")
@@ -859,7 +892,7 @@ p3=predict(model.logist3, data2, type="response")
 p4=predict(model.logist4, data2, type="response")
 ```
 
-```{r}
+```{r, linewidth=95}
 mc1 <- table(p1>0.5, data2$PRIMER_EMBARAZO)
 mc2 <- table(p2>0.5, data2$PRIMER_EMBARAZO)
 mc3 <- table(p3>0.5, data2$PRIMER_EMBARAZO)
@@ -902,7 +935,7 @@ Para analizar el comportamiento de los modelos en diferentes umbrales de probabi
 
 ***CURVA ROC DE LOS MODELOS***
 
-```{r}
+```{r, linewidth=95}
 library(pROC)
 # Análisis ROC
 r1 = roc(data2$PRIMER_EMBARAZO, p1, data=data,auc=T,ci=T)
@@ -911,7 +944,7 @@ r3 = roc(data2$PRIMER_EMBARAZO, p3, data=data,auc=T,ci=T)
 r4 = roc(data2$PRIMER_EMBARAZO, p4, data=data,auc=T,ci=T)
 ```
 
-```{r}
+```{r, linewidth=95}
 plot.roc(r1 ,plot=TRUE, legacy.axes=FALSE, col="salmon", lwd=2)
 plot.roc(r2, col="goldenrod", lwd=2, add=TRUE)
 plot.roc(r3, col="lightsteelblue", lwd=2, add=TRUE)
@@ -942,39 +975,45 @@ A nivel de educación observamos que la probabilidad de que sea el primer hijo a
 
 ¿Qué probabilidad existe de que una mujer embarazada de 19 años de edad, soltera, de raza caucasiana y con estudios de primaria de a luz a su primer hijo?
 
-```{r}
+```{r, linewidth=95}
 
 
 p <- predict(model.logist4, newdata = data.frame( EDAD_MADRE = 19,
                                         ESTADO_CIVIL = "Soltera",
                                         RAZA_MADRE = "Caucasiana",
-                                        EDUC_MADRE = "Primaria"))
+                                        EDUC_MADRE = "Primaria"), type = "response")
              
-sprintf("La probabilidad de que una mujer embarazada de 19 años de edad, soltera, de raza caucasiana y con estudios de primaria de a luz a su primer hijo es de %0.2f%%", p*100)
+sprintf("La probabilidad de que una mujer embarazada de 19 años de edad, soltera,")
+sprintf("de raza caucasiana y con estudios de primaria de a luz a su primer hijo es ")
+sprintf("de %0.2f%%", p*100)
 ```
-¿Qué probabilidad existe de que una madre embarazada de 25 años de edad, casada, de raza asiática y con estudios de universitarios de a luz a su primer hijo?
+¿Qué probabilidad existe de que una mujer embarazada de 25 años de edad, casada, de raza asiática y con estudios de universitarios de a luz a su primer hijo?
 
-```{r}
+```{r, linewidth=95}
 
 
 p <- predict(model.logist4, newdata = data.frame( EDAD_MADRE = 25,
                                         ESTADO_CIVIL = "Casada",
                                         RAZA_MADRE = "Caucasiana",
-                                        EDUC_MADRE = "Postuniversitarios"))
+                                        EDUC_MADRE = "Postuniversitarios"), type = "response")
              
-sprintf("La probabilidad de que una madre embarazada con 25 años de edad, soltera, de raza caucasiana y con estudios Postuniversitarios de a luz a su primer hijo es de %0.2f%%", p*100)
+sprintf("La probabilidad de que una mujer embarazada con 25 años de edad, casada,")
+sprintf("de raza caucasiana y con estudios Postuniversitarios de a luz a su primer")
+sprintf("hijo es de %0.2f%%", p*100)
 ```
 
 ¿Y con las mismas condiciones pero con raza Afroamericana?
-```{r}
+```{r, linewidth=95}
 
 
 p <- predict(model.logist4, newdata = data.frame( EDAD_MADRE = 25,
                                         ESTADO_CIVIL = "Casada",
                                         RAZA_MADRE = "Afroamericana",
-                                        EDUC_MADRE = "Postuniversitarios"))
+                                        EDUC_MADRE = "Postuniversitarios"), type = "response")
              
-sprintf("La probabilidad de que una madre embarazada con 19 años de edad, soltera, de raza Afroamericana y con estudios Postuniversitarios de a luz a su primer hijo es de %0.2f%%", p*100)
+sprintf("La probabilidad de que una mujer embarazada con 19 años de edad, soltera,")
+sprintf("de raza Afroamericana y con estudios Postuniversitarios de a luz a su primer hijo")
+sprintf(" es de %0.2f%%", p*100)
 ```
 
 
@@ -983,13 +1022,13 @@ sprintf("La probabilidad de que una madre embarazada con 19 años de edad, solte
 
 El primer paso sería hacer un análisis de correlación de las variables numéricas
 
-```{r}
+```{r, linewidth=95}
 numvars <- c(1:3,9,11,12)
 mat.cor <- cor(data2[,numvars], method = "pearson")
 
 mat.cor
 ```
-```{r}
+```{r, linewidth=95}
 ggcorrplot(mat.cor,
            method = "circle",
            lab = TRUE,
@@ -1000,7 +1039,7 @@ ggcorrplot(mat.cor,
 
 Los resultados son a priori sorprendentes, dado que se tiende a pensar que las mujeres grandes suelen tener niños más grandes. Sin embargo, desde un punto de vista de correlación no parece que haya ninguna relación suficientemente fuerte. En todo caso, vamos a ver si esta no relación se mantiene por razas.
 
-```{r}
+```{r, linewidth=95}
 m_peso_bb1 <- lm(PESO_NACER_GM ~ PESO_MADRE, data = data2)
 summary(m_peso_bb1)
 ```
@@ -1009,20 +1048,20 @@ Tal y como se podría predecir de la matriz de correlación, nos encontramos con
 
 
 Incluyendo además otras variables cualitativas
-```{r}
+```{r, linewidth=95}
 m_peso_bb2 <- lm(PESO_NACER_GM ~ PESO_MADRE + RAZA_MADRE, data = data2)
 summary(m_peso_bb2)
 ```
 
 
-```{r}
+```{r, linewidth=95}
 m_peso_bb3 <- lm(PESO_NACER_GM ~ RAZA_MADRE, data = data2)
 summary(m_peso_bb3)
 ```
 
 
 
-```{r}
+```{r, linewidth=95}
 data3 <- data2[data2$RAZA_MADRE == "Asiatica" | data2$RAZA_MADRE == "Afroamericana",]
 m_peso_bb4 <- lm(PESO_NACER_GM ~ IMC + RAZA_MADRE, data = data3)
 summary(m_peso_bb4)
@@ -1036,7 +1075,7 @@ Con estos resultados tenemos que descartar construir un modelo de regresión lin
 
 Sin embargo, vamos a hacer una comparativa entre pesos de las madres y los bebes por razas que al principio no lo teníamos en el alcance inicial del trabajo.
 
-```{r}
+```{r, linewidth=95}
 tapply(data2$PESO_MADRE, data2$RAZA_MADRE, mean)
 tapply(data2$PESO_NACER_GM, data2$RAZA_MADRE, mean)
 ```
@@ -1044,14 +1083,16 @@ Llama la atención que las mujeres asiáticas tengan hijos con mayor peso que la
 
 Hacemos un test sobre la varianza para determinar el estadístico a estudiar.
 
-```{r}
-var.test(data2$PESO_NACER_GM[data2$RAZA_MADRE=="Asiatica"], data3$PESO_NACER_GM[data2$RAZA_MADRE=="Afroamericana"])
+```{r, linewidth=95}
+var.test(data2$PESO_NACER_GM[data2$RAZA_MADRE=="Asiatica"], 
+         data3$PESO_NACER_GM[data2$RAZA_MADRE=="Afroamericana"])
 ```
 
 Una vez más, la varianza es diferente por lo que tenemos que repetir el mismo test que en los puntos anteriores.
 
-```{r}
-t.test(data2$PESO_NACER_GM[data2$RAZA_MADRE=="Asiatica"], data3$PESO_NACER_GM[data2$RAZA_MADRE=="Afroamericana"],
+```{r, linewidth=95}
+t.test(data2$PESO_NACER_GM[data2$RAZA_MADRE=="Asiatica"], 
+       data3$PESO_NACER_GM[data2$RAZA_MADRE=="Afroamericana"],
        alternative = "greater", var.equal = FALSE)
 
 ```
@@ -1063,14 +1104,16 @@ Por último, vamos a hacer un test de hipótesis para ver si los hijos de las mu
 
 De nuevo, test sobre las varianzas:
 
-```{r}
-var.test(data2$PESO_NACER_GM[data2$RAZA_MADRE=="Caucasiana"], data2$PESO_NACER_GM[data2$RAZA_MADRE!="Caucasiana"])
+```{r, linewidth=95}
+var.test(data2$PESO_NACER_GM[data2$RAZA_MADRE=="Caucasiana"], 
+         data2$PESO_NACER_GM[data2$RAZA_MADRE!="Caucasiana"])
 ```
 
 Que nos vuelve a dar diferentes
 
-```{r}
-t.test(data2$PESO_NACER_GM[data2$RAZA_MADRE=="Caucasiana"], data2$PESO_NACER_GM[data2$RAZA_MADRE!="Caucasiana"],
+```{r, linewidth=95}
+t.test(data2$PESO_NACER_GM[data2$RAZA_MADRE=="Caucasiana"], 
+       data2$PESO_NACER_GM[data2$RAZA_MADRE!="Caucasiana"],
        alternative = "greater", var.equal = FALSE)
 
 ```
@@ -1082,7 +1125,7 @@ Efectivamente, se comprueba que en media los hijos de las mujeres caucasianas pe
 
 ***¿Las madres de raza caucasiana tienen hijos en media con mayor edad que las de raza afroamericana ?***
 
-```{r}
+```{r, linewidth=95}
 tmp <- rbind(data.frame(raza = "Caucasiana", edad = madres_rc$EDAD_MADRE),
        data.frame(raza = "Afroamericana", edad = madres_raf$EDAD_MADRE))
 
@@ -1093,7 +1136,7 @@ ggplot(tmp , aes(x = edad, fill = raza)) + geom_density(adjust = 2,alpha=0.3 )+
 
 ***¿Las madres de raza caucasiana tienen su primer hijo en media con mayor edad que las de raza afroamericana?***
 
-```{r}
+```{r, linewidth=95}
 
 tmp <- rbind(data.frame(raza = "Caucasiana", edad = madres_rc_primer$EDAD_MADRE),
        data.frame(raza = "Afroamericana", edad = madres_raf_primer$EDAD_MADRE))
@@ -1107,7 +1150,7 @@ En ambos casos se puede apreciar fácilmente en los gráficos que en media las m
 
 ***¿Las madres de raza asíatica tienen su primer hijo en media con mayor edad que las de raza no asiática?***
 
-```{r}
+```{r, linewidth=95}
 
 tmp <- rbind(data.frame(raza = "Asiática", edad = madres_rasi_primer$EDAD_MADRE),
        data.frame(raza = "No Asiática", edad = madres_r_no_asi_primer$EDAD_MADRE))
@@ -1121,9 +1164,11 @@ ggplot(tmp , aes(x = edad, fill = raza)) + geom_density(adjust = 2,alpha=0.3) +
 t.test(madres_uni$EDAD_MADRE[madres_uni$PRIMER_EMBARAZO == "Si"], madres_no_uni$EDAD_MADRE[madres_no_uni$PRIMER_EMBARAZO == "Si"],
        alternative = "greater", var.equal = FALSE)
 `
-```{r}
-tmp <- rbind(data.frame(Nivel_estudios = "Universitarias", edad = madres_uni$EDAD_MADRE[madres_uni$PRIMER_EMBARAZO == "Si"]),
-       data.frame(Nivel_estudios = "No Universiarias", edad = madres_no_uni$EDAD_MADRE[madres_no_uni$PRIMER_EMBARAZO == "Si"]))
+```{r, linewidth=95}
+tmp <- rbind(data.frame(Nivel_estudios = "Universitarias", 
+                        edad = madres_uni$EDAD_MADRE[madres_uni$PRIMER_EMBARAZO == "Si"]),
+                        data.frame(Nivel_estudios = "No Universiarias", 
+                        edad = madres_no_uni$EDAD_MADRE[madres_no_uni$PRIMER_EMBARAZO == "Si"]))
 
 ggplot(tmp , aes(x = edad, fill = Nivel_estudios)) + geom_density(adjust = 2,alpha=0.3) + 
       geom_vline(xintercept = 31.93, color="#00BFC4", linetype ="dotted", size=1.5) + 
@@ -1143,11 +1188,18 @@ También hemos confirmado estadísticamente que las mujeres con estudios univers
 
 Adicionalmente y de forma sorpresiva, las mujeres caucásicas son las que en media sus hijos pesan más de todas la razas, siendo muy llamativo el ejemplo de que las mujeres asiáticas tienen en media, bebés más pesados que las mujeres afroamericanas, siendo estás más altas y más pesadas en media que las asiáticas.
 
-Por último, y también como factor anectdótico, hemos encontrado que las mujeres asiáticas tienen su primer hijo a una edad más avanzada que el resto de las razas.
+Por último, y también como factor anecdótico, hemos encontrado que las mujeres asiáticas tienen su primer hijo a una edad más avanzada que el resto de las razas.
 
 En resumen, hemos encontrado ciertos factores a priori insospechados que influyen en las edades de las mujeres al tener hijos y hemos confirmado que los factores biológicos de las mujeres no determinan el peso de los bebes al nacer.
 
 
-
+~~~~~
+Contribuyentes                FIRMA
+-------------------------    --------
+Investigación Previa          DP, FA
+Redacción de las respuestas   DP, FA
+Desarrollo de código          DP, FA
+------------------------     --------
+~~~~~
 
 
