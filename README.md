@@ -1,26 +1,22 @@
-# Pr·ctica 2: Limpieza y an·lisis de datos
+# Pr√°ctica 2: Limpieza y an√°lisis de datos
 
-## DescripciÛn
-Esta pr·ctica se ha realizado para la asignatura _TipologÌa y ciclo de vida de los datos_, y forma parte del master en Ciencia de Datos de la Universitat Oberta de Catalunya. En ella, se aplican tÈcnicas de _limpieza y an·lisis estadÌstico de datos_ mediante el lenguaje estadÌstico r (r markdown) sobre el dataset https://www.kaggle.com/des137/us-births-2018.
+## Descripci√≥n
+Esta pr√°ctica se ha realizado para la asignatura _Tipolog√≠a y ciclo de vida de los datos_, y forma parte del master en Ciencia de Datos de la Universitat Oberta de Catalunya. En ella, se aplican t√©cnicas de _limpieza y an√°lisis estad√≠stico de datos_ mediante el lenguaje estad√≠stico r (r markdown) sobre el dataset https://www.kaggle.com/des137/us-births-2018.
 
 ## Miembros del equipo
-La pr·ctica ha sido realizada conjuntamente por Daniel Padilla y Fernando ¡lamo.
+La pr√°ctica ha sido realizada conjuntamente por Daniel Padilla y Fernando √Ålamo.
 
-## Fichero del cÛdigo fuente
-La pr·ctica est·° organizada en varios directorios:
+## Fichero del c√≥digo fuente
+La pr√°ctica est√° organizada en varios directorios:
 
-1. csv. Directorio en el que est· el archivo sobre el que se va a realizar el estudio estadÌstico.
-Este fichero se genera desde el dataset de kaggle mencionando en la descripciÛn. Sobre este dataset se ejecutan limpieza y acondicionado de los datos para su mejor tratamiento y se guarda el dataset tratado.
-2. src. Directorio en el que est·n guardados los archivos fuente en r de la pr·ctica.
+1. csv. Directorio en el que est√° un archivo que contiene dos enlaces, por un lado al repositorio base en kaggle que se ha tomado como fuente para hacer este estudio estad√≠stico, y por otro un enlace al fichero de datos una vez se ha realizado la limpieza y tratamiento de datos previo al estudio.
+2. src. Directorio en el que est√° guardado el archivo fuente en formato rmd de la pr√°ctica.
 
-A su vez, el directorio raÌz del proyecto contiene la licencia bajo la que se realiza el cÛdigo y este fichero README  
+A su vez, el directorio ra√≠z del proyecto contiene la licencia bajo la que se realiza el c√≥digo y este fichero README  
 
-Los archivos con el cÛdigo fuente son los siguientes:
-1. US2018_NACIMIENTOS.rmd. Contiene la implementaciÛn de la limpieza y tratamiento de valores ausentes, usando mÈtodos estadÌsticos como regresiÛn lineal, o sustituciÛn por medidas centrales.
-2. 
+El archivo con el c√≥digo fuente es US2018_NACIMIENTOS.rmd.
++ Contiene la implementaci√≥n de la limpieza y tratamiento de valores ausentes, usando m√©todos estad√≠sticos como regresi√≥n lineal, o sustituci√≥n por medidas centrales. 
++ Despu√©s de esta fase de limpieza, se produce el salvado del fichero US2018_births_clean.csv
++ A continuaci√≥n, se lleva a cabo la fase de an√°lisis y visualizaci√≥n de resultados. 
    
-
-Adicionalmente, est· este fichero README.md en el que se explica la estructura general del proyecto e incluye tambiÈn algunas justificaciones de las decisiones tomadas para la limpieza y tratamiento de los datos
-
-## Recursos
-
+Adicionalmente, est√° este fichero README.md en el que se explica la estructura general del proyecto e incluye tambi√©n algunas justificaciones de las decisiones tomadas para la limpieza y tratamiento de los datos
