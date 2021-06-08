@@ -20,13 +20,3 @@ El archivo con el código fuente es US2018_NACIMIENTOS.rmd.
 + A continuación, se lleva a cabo la fase de análisis y visualización de resultados. 
    
 Adicionalmente, está este fichero README.md en el que se explica la estructura general del proyecto e incluye también algunas justificaciones de las decisiones tomadas para la limpieza y tratamiento de los datos
-
-~~~~
-Contribuyentes                            FIRMA
--------------------------    -------------------------------
-Investigación Previa         Daniel Padilla, Fernando Álamo
-Redacción de las respuestas  Daniel Padilla, Fernando Álamo
-Desarrollo de código         Daniel Padilla, Fernando Álamo
-------------------------     ------------------------------
-~~~~
-
