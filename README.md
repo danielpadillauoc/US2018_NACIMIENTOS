@@ -20,3 +20,16 @@ El archivo con el código fuente es US2018_NACIMIENTOS.rmd.
 + A continuación, se lleva a cabo la fase de análisis y visualización de resultados. 
    
 Adicionalmente, está este fichero README.md en el que se explica la estructura general del proyecto e incluye también algunas justificaciones de las decisiones tomadas para la limpieza y tratamiento de los datos
+
+~~~~
+Name                     Stmts   Miss  Cover
+--------------------------------------------
+FuncionesEjercicios.py      41     11    73%
+LecturaFicheros.py          64      2    97%
+auxiliares.py               26      0   100%
+test.py                     65      0   100%
+--------------------------------------------
+TOTAL                      196     13    93%
+
+~~~~
+
