@@ -1,0 +1,7 @@
+Repositorios de datos:
+
+Dataset original: 
+US_births(2018).csv: https://www.kaggle.com/des137/us-births-2018
+
+Dataset después de limpieza de datos: 
+US2018_births_clean.csv: https://www.kaggle.com/falamo1969/nacimientos-2018-usa-practica-data-science-uoc
