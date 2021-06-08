@@ -27,6 +27,6 @@ Contribuyentes                            FIRMA
 Investigación Previa         Daniel Padilla, Fernando Álamo
 Redacción de las respuestas  Daniel Padilla, Fernando Álamo
 Desarrollo de código         Daniel Padilla, Fernando Álamo
-------------------------     -----------------
+------------------------     ------------------------------
 ~~~~
 
